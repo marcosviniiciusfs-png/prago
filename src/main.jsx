@@ -17,7 +17,7 @@ import './styles.css';
 
 const IG = 'https://www.instagram.com/pragoempreendimentostlms/';
 const HERO_ASSET = `${import.meta.env.BASE_URL}assets/prago-patrimonio-hero.png`;
-const LOGO_ASSET = `${import.meta.env.BASE_URL}assets/prago-logo-horizontal.png`;
+const LOGO_ASSET = `${import.meta.env.BASE_URL}assets/prago-logo-oficial-hd.png`;
 const WHATSAPP_NUMBER = '5567991609873';
 const whatsappUrl = (message) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 const goals = [
