@@ -17,6 +17,7 @@ import './styles.css';
 
 const IG = 'https://www.instagram.com/pragoempreendimentostlms/';
 const HERO_ASSET = `${import.meta.env.BASE_URL}assets/prago-patrimonio-hero.png`;
+const LOGO_ASSET = `${import.meta.env.BASE_URL}assets/prago-logo-horizontal.png`;
 const WHATSAPP_NUMBER = '5567991609873';
 const whatsappUrl = (message) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 const goals = [
@@ -48,7 +49,7 @@ const money = (v) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'B
 const onlyDigits = (v) => v.replace(/\D/g,'');
 const phoneMask = (v) => { const n=onlyDigits(v).slice(0,11); if(n.length<=2)return n; if(n.length<=7)return `(${n.slice(0,2)}) ${n.slice(2)}`; return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}` };
 
-function Logo(){return <a className="logo" href="#top" aria-label="Prago, início"><span className="logo-mark">P</span><span>PRAGO<small>EMPREENDIMENTOS</small></span></a>}
+function Logo(){return <a className="logo" href="#top" aria-label="Prago Empreendimentos, início"><img src={LOGO_ASSET} alt="Prago Empreendimentos"/></a>}
 function App(){
   const [menu,setMenu]=useState(false); const [step,setStep]=useState(0); const [sent,setSent]=useState(false);
   const [data,setData]=useState({goal:'',amount:0,entry:0,installment:0,timeline:'',city:'',name:'',phone:''});
