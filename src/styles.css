@@ -15,3 +15,6 @@
 @media(max-width:560px){body{padding-bottom:68px}.contemplados{padding:80px 18px}.contemplados-grid{grid-template-columns:1fr;margin-top:38px}.contemplados-grid article:last-child{grid-column:auto;max-width:none}.contemplado-media{height:210px}.sticky-cta{left:12px;right:12px;bottom:10px;justify-content:center;min-height:52px}.sticky-cta svg:last-child{position:absolute;right:18px}}
 .logo img{display:block;width:72px;height:72px;object-fit:contain;object-position:center}.logo{letter-spacing:0}.logo-mark,.logo>span{display:none}footer .logo img{width:90px;height:90px}
 @media(max-width:560px){.logo img{width:58px;height:58px}footer .logo img{width:82px;height:82px}}
+
+.sticky-cta{top:100px;bottom:auto}
+@media(max-width:560px){body{padding-bottom:0}.sticky-cta{left:auto;right:12px;top:80px;bottom:auto}.sticky-cta svg:last-child{position:static}}
