@@ -18,7 +18,7 @@ import './styles.css';
 const IG = 'https://www.instagram.com/pragoempreendimentostlms/';
 const HERO_ASSET = `${import.meta.env.BASE_URL}assets/prago-patrimonio-hero.png`;
 const LOGO_ASSET = `${import.meta.env.BASE_URL}assets/prago-logo-oficial-hd.png`;
-const WHATSAPP_NUMBER = '5567991609873';
+const WHATSAPP_NUMBER = '5567992177491';
 const whatsappUrl = (message) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 const goals = [
   { id:'imovel', label:'Comprar um imóvel', sub:'Casa, apartamento ou terreno', icon:Building2 },
@@ -58,7 +58,23 @@ function App(){
   const next=()=>{if(!valid)return; if(step<5)setStep(s=>s+1);else submit()};
   const submit=async()=>{ const eventId=`lead_${Date.now()}_${Math.random().toString(36).slice(2,8)}`; const payload={...data,amount_formatted:money(data.amount),source:'simulador_prago',event_id:eventId,source_url:location.href,received_at:new Date().toISOString()};
     const api=import.meta.env.VITE_LEAD_API_URL; if(api){try{const r=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_name:'Lead',event_id:eventId,event_source_url:location.href,lead_data:payload,user_data:{ph:onlyDigits(data.phone),fn:data.name.split(' ')[0],ct:data.city},custom_data:{content_name:'Simulador Prago',lead_type:data.goal}})});if(!r.ok)throw Error()}catch{alert('Não foi possível enviar agora. Tente novamente em instantes.');return}}
-    sessionStorage.setItem('prago_lead',JSON.stringify(payload)); window.fbq?.('track','Lead',{}, {eventID:eventId}); setSent(true); window.scrollTo({top:document.querySelector('#simulador').offsetTop-80,behavior:'smooth'});
+    const goalLabel=goals.find(x=>x.id===data.goal)?.label??data.goal;
+    const amountLabel=creditOptions.find(x=>x.value===data.amount)?.label??money(data.amount);
+    const entryLabel=entryOptions.find(x=>x.value===data.entry)?.label??money(data.entry);
+    const installmentLabel=installmentOptions.find(x=>x.value===data.installment)?.label??money(data.installment);
+    const whatsappMessage=[
+      'Olá! Concluí a simulação no site da Prago Empreendimentos.',
+      '',
+      `Nome completo: ${data.name.trim()}`,
+      `WhatsApp: ${phoneMask(data.phone)}`,
+      `Cidade: ${data.city.trim()}`,
+      `Objetivo: ${goalLabel}`,
+      `Valor desejado: ${amountLabel}`,
+      `Entrada disponível: ${entryLabel}`,
+      `Parcela mensal: ${installmentLabel}`,
+      `Prazo: ${data.timeline}`,
+    ].join('\n');
+    sessionStorage.setItem('prago_lead',JSON.stringify(payload)); window.fbq?.('track','Lead',{}, {eventID:eventId}); setSent(true); window.open(whatsappUrl(whatsappMessage),'_blank','noopener,noreferrer'); window.scrollTo({top:document.querySelector('#simulador').offsetTop-80,behavior:'smooth'});
   };
   return <>
     <header><Logo/><button className="menu-btn" onClick={()=>setMenu(!menu)} aria-label="Abrir menu">{menu?<X/>:<Menu/>}</button><nav className={menu?'open':''}><a href="#solucoes" onClick={()=>setMenu(false)}>Soluções</a><a href="#processo" onClick={()=>setMenu(false)}>Como funciona</a><a href="#sobre" onClick={()=>setMenu(false)}>Sobre</a><a className="nav-cta" href="#simulador">Simular agora <ArrowRight size={16}/></a></nav></header>
