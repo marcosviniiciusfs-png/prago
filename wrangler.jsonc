@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "prago-lead-api",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-03",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": {
+    "META_PIXEL_ID": "2161151114746764",
+    "ALLOWED_ORIGINS": "https://prago.simulead.com.br,http://127.0.0.1:5173,http://localhost:5173"
+  },
+  "secrets": {
+    "required": ["META_ACCESS_TOKEN"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

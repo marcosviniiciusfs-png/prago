@@ -20,6 +20,7 @@ const HERO_ASSET = `${import.meta.env.BASE_URL}assets/prago-patrimonio-hero.png`
 const LOGO_ASSET = `${import.meta.env.BASE_URL}assets/prago-logo-oficial-hd.png`;
 const WHATSAPP_NUMBER = '5567992177491';
 const whatsappUrl = (message) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+const getCookie = (name) => document.cookie.split('; ').find(x=>x.startsWith(`${name}=`))?.slice(name.length+1);
 const goals = [
   { id:'imovel', label:'Comprar um imóvel', sub:'Casa, apartamento ou terreno', icon:Building2 },
   { id:'veiculo', label:'Comprar um veículo', sub:'Carro, moto ou utilitário', icon:Car },
@@ -57,7 +58,7 @@ function App(){
   const valid=useMemo(()=> step===0?!!data.goal:step===1?data.amount>0:step===2?data.entry>0:step===3?data.installment>0:step===4?!!data.timeline:data.name.trim().length>2&&onlyDigits(data.phone).length>=10&&data.city.trim().length>2,[step,data]);
   const next=()=>{if(!valid)return; if(step<5)setStep(s=>s+1);else submit()};
   const submit=async()=>{ const eventId=`lead_${Date.now()}_${Math.random().toString(36).slice(2,8)}`; const payload={...data,amount_formatted:money(data.amount),source:'simulador_prago',event_id:eventId,source_url:location.href,received_at:new Date().toISOString()};
-    const api=import.meta.env.VITE_LEAD_API_URL; if(api){try{const r=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_name:'Lead',event_id:eventId,event_source_url:location.href,lead_data:payload,user_data:{ph:onlyDigits(data.phone),fn:data.name.split(' ')[0],ct:data.city},custom_data:{content_name:'Simulador Prago',lead_type:data.goal}})});if(!r.ok)throw Error()}catch{alert('Não foi possível enviar agora. Tente novamente em instantes.');return}}
+    const api=import.meta.env.VITE_LEAD_API_URL; if(api){try{const r=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_name:'Lead',event_id:eventId,event_source_url:location.href,user_data:{ph:onlyDigits(data.phone),fn:data.name.split(' ')[0],ct:data.city,fbp:getCookie('_fbp'),fbc:getCookie('_fbc')},custom_data:{content_name:'Simulador Prago',lead_type:data.goal}})});if(!r.ok)throw Error()}catch{console.warn('O rastreamento do lead não pôde ser concluído.')}}
     const goalLabel=goals.find(x=>x.id===data.goal)?.label??data.goal;
     const amountLabel=creditOptions.find(x=>x.value===data.amount)?.label??money(data.amount);
     const entryLabel=entryOptions.find(x=>x.value===data.entry)?.label??money(data.entry);

@@ -29,6 +29,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+        env:
+          VITE_LEAD_API_URL: https://prago-lead-api.marcosviniicius-fs.workers.dev/lead
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

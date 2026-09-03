@@ -11,6 +11,8 @@ npm run dev
 
 ## Produção
 
-Antes de publicar, configure `VITE_LEAD_API_URL` conforme `.env.example`. Sem a variável, o projeto funciona em modo de demonstração: registra a simulação apenas na sessão do navegador e oferece continuidade pelo Instagram.
+O Meta Pixel `2161151114746764` registra `PageView` e `Lead`. O endpoint `VITE_LEAD_API_URL` envia o mesmo evento `Lead` para a Meta Conversions API por um Cloudflare Worker, com deduplicação via `event_id`. O token da Meta fica armazenado somente como secret criptografado do Worker.
+
+Sem `VITE_LEAD_API_URL`, o projeto funciona em modo de demonstração: registra a simulação apenas na sessão do navegador e oferece continuidade pelo WhatsApp.
 
 O deploy público é realizado automaticamente pelo GitHub Pages após alterações na branch `main`, no domínio `https://prago.simulead.com.br/`.
