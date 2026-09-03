@@ -7,6 +7,11 @@ type LeadEvent = {
   event_name: "Lead";
   event_id: string;
   event_source_url: string;
+  lead_data: {
+    name: string;
+    phone: string;
+    amount: number;
+  };
   user_data: {
     ph: string;
     fn: string;
@@ -59,27 +64,50 @@ export default {
       const payload = parseLeadEvent(await readJson(request));
       requireAllowedSource(payload.event_source_url, env.ALLOWED_ORIGINS);
 
-      const metaResponse = await sendToMeta(payload, request, env);
-      if (!metaResponse.ok) {
+      const [metaDelivery, kairozDelivery] = await Promise.allSettled([
+        sendToMeta(payload, request, env),
+        sendToKairoz(payload, env),
+      ]);
+
+      const metaResponse = metaDelivery.status === "fulfilled" ? metaDelivery.value : null;
+      const kairozResponse = kairozDelivery.status === "fulfilled" ? kairozDelivery.value : null;
+
+      if (!metaResponse?.ok) {
         console.error(JSON.stringify({
-          event: "meta_capi_rejected",
+          event: metaResponse ? "meta_capi_rejected" : "meta_capi_error",
           eventId: payload.event_id,
-          status: metaResponse.status,
-          code: metaResponse.code,
-          subcode: metaResponse.subcode,
-          traceId: metaResponse.traceId,
+          status: metaResponse?.status,
+          code: metaResponse?.code,
+          subcode: metaResponse?.subcode,
+          traceId: metaResponse?.traceId,
+          error: metaDelivery.status === "rejected" ? safeErrorName(metaDelivery.reason) : undefined,
         }));
-        return json({ ok: false, error: "tracking_unavailable" }, 502, corsHeaders);
+      } else {
+        console.log(JSON.stringify({ event: "meta_capi_accepted", eventId: payload.event_id }));
       }
 
-      console.log(JSON.stringify({ event: "meta_capi_accepted", eventId: payload.event_id }));
+      if (!kairozResponse?.ok) {
+        console.error(JSON.stringify({
+          event: kairozResponse ? "kairoz_webhook_rejected" : "kairoz_webhook_error",
+          eventId: payload.event_id,
+          status: kairozResponse?.status,
+          error: kairozDelivery.status === "rejected" ? safeErrorName(kairozDelivery.reason) : undefined,
+        }));
+      } else {
+        console.log(JSON.stringify({ event: "kairoz_webhook_accepted", eventId: payload.event_id }));
+      }
+
+      if (!metaResponse?.ok || !kairozResponse?.ok) {
+        return json({ ok: false, error: "delivery_failed" }, 502, corsHeaders);
+      }
+
       return json({ ok: true }, 200, corsHeaders);
     } catch (error) {
       if (error instanceof HttpError) {
         return json({ ok: false, error: error.code }, error.status, corsHeaders);
       }
 
-      console.error(JSON.stringify({ event: "meta_capi_error", error: safeErrorName(error) }));
+      console.error(JSON.stringify({ event: "lead_delivery_error", error: safeErrorName(error) }));
       return json({ ok: false, error: "internal_error" }, 500, corsHeaders);
     }
   },
@@ -166,7 +194,14 @@ function parseLeadEvent(value: unknown): LeadEvent {
 
   const eventId = getRequiredString(value, "event_id", 8, 128);
   const eventSourceUrl = getRequiredString(value, "event_source_url", 8, 2048);
+  if (!isObject(value.lead_data)) throw new HttpError(400, "invalid_lead_data");
   if (!isObject(value.user_data)) throw new HttpError(400, "invalid_user_data");
+
+  const leadData = {
+    name: getRequiredString(value.lead_data, "name", 1, 200),
+    phone: getRequiredString(value.lead_data, "phone", 8, 30),
+    amount: getRequiredNumber(value.lead_data, "amount", 1, 1_000_000_000),
+  };
 
   const userData = {
     ph: getRequiredString(value.user_data, "ph", 10, 20),
@@ -187,9 +222,31 @@ function parseLeadEvent(value: unknown): LeadEvent {
     event_name: "Lead",
     event_id: eventId,
     event_source_url: eventSourceUrl,
+    lead_data: leadData,
     user_data: userData,
     custom_data: customData,
   };
+}
+
+async function sendToKairoz(
+  payload: LeadEvent,
+  env: Env,
+): Promise<{ ok: boolean; status: number }> {
+  const phone = payload.lead_data.phone.replace(/\D/g, "");
+  if (phone.length < 8 || phone.length > 15) throw new HttpError(400, "invalid_phone");
+
+  const response = await fetch(env.KAIROZ_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nome: payload.lead_data.name,
+      telefone: phone,
+      valor: payload.lead_data.amount,
+    }),
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  return { ok: response.ok, status: response.status };
 }
 
 async function sendToMeta(
@@ -308,6 +365,14 @@ function getOptionalString(value: JsonObject, key: string, max: number): string 
   const trimmed = entry.trim();
   if (trimmed.length > max) throw new HttpError(400, "invalid_payload");
   return trimmed || undefined;
+}
+
+function getRequiredNumber(value: JsonObject, key: string, min: number, max: number): number {
+  const entry = value[key];
+  if (typeof entry !== "number" || !Number.isFinite(entry) || entry < min || entry > max) {
+    throw new HttpError(400, "invalid_payload");
+  }
+  return entry;
 }
 
 function json(

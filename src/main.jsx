@@ -78,9 +78,9 @@ function App(){
     sessionStorage.setItem('prago_lead',JSON.stringify(payload));
     window.fbq?.('track','Lead',{}, {eventID:eventId});
     const api=import.meta.env.VITE_LEAD_API_URL;
-    const capiRequest=api?fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify({event_name:'Lead',event_id:eventId,event_source_url:location.href,user_data:{ph:onlyDigits(data.phone),fn:data.name.split(' ')[0],ct:data.city,fbp:getCookie('_fbp'),fbc:getCookie('_fbc')},custom_data:{content_name:'Simulador Prago',lead_type:data.goal}})}):null;
+    const leadRequest=api?fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify({event_name:'Lead',event_id:eventId,event_source_url:location.href,lead_data:payload,user_data:{ph:onlyDigits(data.phone),fn:data.name.split(' ')[0],ct:data.city,fbp:getCookie('_fbp'),fbc:getCookie('_fbc')},custom_data:{content_name:'Simulador Prago',lead_type:data.goal}})}):null;
     setWhatsappLink(link); setSent(true); const whatsappWindow=window.open(link,'_blank'); if(whatsappWindow)whatsappWindow.opener=null;else location.href=link; window.scrollTo({top:document.querySelector('#simulador').offsetTop-80,behavior:'smooth'});
-    if(capiRequest){try{const r=await capiRequest;if(!r.ok)throw Error()}catch{console.warn('O rastreamento do lead não pôde ser concluído.')}}
+    if(leadRequest){try{const r=await leadRequest;if(!r.ok)throw Error()}catch{console.warn('O envio automático do lead não pôde ser concluído.')}}
   };
   return <>
     <header><Logo/><button className="menu-btn" onClick={()=>setMenu(!menu)} aria-label="Abrir menu">{menu?<X/>:<Menu/>}</button><nav className={menu?'open':''}><a href="#solucoes" onClick={()=>setMenu(false)}>Soluções</a><a href="#processo" onClick={()=>setMenu(false)}>Como funciona</a><a href="#sobre" onClick={()=>setMenu(false)}>Sobre</a><a className="nav-cta" href="#simulador">Simular agora <ArrowRight size={16}/></a></nav></header>

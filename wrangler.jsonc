@@ -11,7 +11,7 @@
     "ALLOWED_ORIGINS": "https://prago.simulead.com.br,http://127.0.0.1:5173,http://localhost:5173"
   },
   "secrets": {
-    "required": ["META_ACCESS_TOKEN"]
+    "required": ["META_ACCESS_TOKEN", "KAIROZ_WEBHOOK_URL"]
   },
   "observability": {
     "enabled": true,
