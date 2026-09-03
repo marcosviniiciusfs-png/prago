@@ -52,13 +52,12 @@ const phoneMask = (v) => { const n=onlyDigits(v).slice(0,11); if(n.length<=2)ret
 
 function Logo(){return <a className="logo" href="#top" aria-label="Prago Empreendimentos, início"><img src={LOGO_ASSET} alt="Prago Empreendimentos"/></a>}
 function App(){
-  const [menu,setMenu]=useState(false); const [step,setStep]=useState(0); const [sent,setSent]=useState(false);
+  const [menu,setMenu]=useState(false); const [step,setStep]=useState(0); const [sent,setSent]=useState(false); const [whatsappLink,setWhatsappLink]=useState('');
   const [data,setData]=useState({goal:'',amount:0,entry:0,installment:0,timeline:'',city:'',name:'',phone:''});
   useEffect(()=>{const els=document.querySelectorAll('[data-reveal]');const o=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('visible')),{threshold:.15});els.forEach(e=>o.observe(e));return()=>o.disconnect()},[]);
   const valid=useMemo(()=> step===0?!!data.goal:step===1?data.amount>0:step===2?data.entry>0:step===3?data.installment>0:step===4?!!data.timeline:data.name.trim().length>2&&onlyDigits(data.phone).length>=10&&data.city.trim().length>2,[step,data]);
   const next=()=>{if(!valid)return; if(step<5)setStep(s=>s+1);else submit()};
   const submit=async()=>{ const eventId=`lead_${Date.now()}_${Math.random().toString(36).slice(2,8)}`; const payload={...data,amount_formatted:money(data.amount),source:'simulador_prago',event_id:eventId,source_url:location.href,received_at:new Date().toISOString()};
-    const api=import.meta.env.VITE_LEAD_API_URL; if(api){try{const r=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_name:'Lead',event_id:eventId,event_source_url:location.href,user_data:{ph:onlyDigits(data.phone),fn:data.name.split(' ')[0],ct:data.city,fbp:getCookie('_fbp'),fbc:getCookie('_fbc')},custom_data:{content_name:'Simulador Prago',lead_type:data.goal}})});if(!r.ok)throw Error()}catch{console.warn('O rastreamento do lead não pôde ser concluído.')}}
     const goalLabel=goals.find(x=>x.id===data.goal)?.label??data.goal;
     const amountLabel=creditOptions.find(x=>x.value===data.amount)?.label??money(data.amount);
     const entryLabel=entryOptions.find(x=>x.value===data.entry)?.label??money(data.entry);
@@ -75,7 +74,13 @@ function App(){
       `Parcela mensal: ${installmentLabel}`,
       `Prazo: ${data.timeline}`,
     ].join('\n');
-    sessionStorage.setItem('prago_lead',JSON.stringify(payload)); window.fbq?.('track','Lead',{}, {eventID:eventId}); setSent(true); window.open(whatsappUrl(whatsappMessage),'_blank','noopener,noreferrer'); window.scrollTo({top:document.querySelector('#simulador').offsetTop-80,behavior:'smooth'});
+    const link=whatsappUrl(whatsappMessage);
+    sessionStorage.setItem('prago_lead',JSON.stringify(payload));
+    window.fbq?.('track','Lead',{}, {eventID:eventId});
+    const api=import.meta.env.VITE_LEAD_API_URL;
+    const capiRequest=api?fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},keepalive:true,body:JSON.stringify({event_name:'Lead',event_id:eventId,event_source_url:location.href,user_data:{ph:onlyDigits(data.phone),fn:data.name.split(' ')[0],ct:data.city,fbp:getCookie('_fbp'),fbc:getCookie('_fbc')},custom_data:{content_name:'Simulador Prago',lead_type:data.goal}})}):null;
+    setWhatsappLink(link); setSent(true); const whatsappWindow=window.open(link,'_blank'); if(whatsappWindow)whatsappWindow.opener=null;else location.href=link; window.scrollTo({top:document.querySelector('#simulador').offsetTop-80,behavior:'smooth'});
+    if(capiRequest){try{const r=await capiRequest;if(!r.ok)throw Error()}catch{console.warn('O rastreamento do lead não pôde ser concluído.')}}
   };
   return <>
     <header><Logo/><button className="menu-btn" onClick={()=>setMenu(!menu)} aria-label="Abrir menu">{menu?<X/>:<Menu/>}</button><nav className={menu?'open':''}><a href="#solucoes" onClick={()=>setMenu(false)}>Soluções</a><a href="#processo" onClick={()=>setMenu(false)}>Como funciona</a><a href="#sobre" onClick={()=>setMenu(false)}>Sobre</a><a className="nav-cta" href="#simulador">Simular agora <ArrowRight size={16}/></a></nav></header>
@@ -95,7 +100,7 @@ function App(){
             {step===4&&<><div className="step-icon">◷</div><h3>Quando pretende realizar?</h3><p>Escolha o prazo mais próximo do seu momento.</p><div className="choice-stack">{timingOptions.map((x,i)=><button className={data.timeline===x?'range-choice selected':'range-choice'} onClick={()=>setData({...data,timeline:x})} key={x}><span className="time-chip">{['Agora','3–6m','6–12m','12m+'][i]}</span><span><b>{x}</b><small>{['Quero começar logo','Quero me organizar primeiro','Estou planejando com calma','Ainda estou avaliando'][i]}</small></span><i>{data.timeline===x&&<Check size={15}/>}</i></button>)}</div></>}
             {step===5&&<><div className="step-icon">✓</div><h3>Para quem preparamos esta análise?</h3><p>Preencha seus dados para receber um atendimento direcionado.</p><label className="field-label">Nome completo</label><input className="input" autoFocus placeholder="Como podemos te chamar?" value={data.name} onChange={e=>setData({...data,name:e.target.value})}/><div className="contact-row"><label><span>WhatsApp</span><input className="input" inputMode="tel" placeholder="(67) 99999-9999" value={data.phone} onChange={e=>setData({...data,phone:phoneMask(e.target.value)})}/></label><label><span>Cidade</span><input className="input" placeholder="Onde você mora?" value={data.city} onChange={e=>setData({...data,city:e.target.value})}/></label></div></>}
           </div><div className="sim-actions">{step>0?<button className="back" onClick={()=>setStep(s=>s-1)}><ArrowLeft/> Voltar</button>:<span/>}<button className="next" disabled={!valid} onClick={next}>{step===5?'Receber minha análise':'Continuar'} <ArrowRight/></button></div></>:
-          <div className="success"><div className="success-icon"><Check/></div><span className="eyebrow dark">SIMULAÇÃO CONCLUÍDA</span><h3>Obrigado, {data.name.split(' ')[0]}.</h3><p>Suas respostas foram registradas. Continue pelo Instagram para falar com a equipe Prago e dar o próximo passo.</p><a className="primary" href={IG} target="_blank" rel="noreferrer"><Instagram/> Falar com a Prago</a><button onClick={()=>{setSent(false);setStep(0)}}>Fazer nova simulação</button></div>}
+          <div className="success"><div className="success-icon"><Check/></div><span className="eyebrow dark">SIMULAÇÃO CONCLUÍDA</span><h3>Obrigado, {data.name.split(' ')[0]}.</h3><p>Suas respostas foram registradas e sua simulação foi aberta no WhatsApp para você falar com a equipe Prago.</p><a className="primary" href={whatsappLink} target="_blank" rel="noreferrer">Continuar no WhatsApp <ArrowRight/></a><button onClick={()=>{setSent(false);setStep(0);setWhatsappLink('')}}>Fazer nova simulação</button></div>}
         </div>
       </section>
 
