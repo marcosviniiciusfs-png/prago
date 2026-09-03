@@ -18,7 +18,7 @@ import './styles.css';
 const IG = 'https://www.instagram.com/pragoempreendimentostlms/';
 const HERO_ASSET = `${import.meta.env.BASE_URL}assets/prago-patrimonio-hero.png`;
 const LOGO_ASSET = `${import.meta.env.BASE_URL}assets/prago-logo-oficial-hd.png`;
-const WHATSAPP_NUMBER = '5567992177491';
+const WHATSAPP_NUMBER = '5567991939230';
 const whatsappUrl = (message) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 const getCookie = (name) => document.cookie.split('; ').find(x=>x.startsWith(`${name}=`))?.slice(name.length+1);
 const goals = [
